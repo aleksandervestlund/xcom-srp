@@ -1,0 +1,6 @@
+-r base.txt
+
+black==24.10.0
+isort==5.13.2
+mypy==1.13.0
+types-networkx==3.4.2.20241115
