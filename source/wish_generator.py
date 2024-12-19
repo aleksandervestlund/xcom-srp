@@ -28,9 +28,14 @@ def _generate_wishes(seed: int) -> DataFrame:
             row.append(gender)
 
             max_wishes = len(WISH_COLUMNS)
-            n_wishes = rng.integers(1, max_wishes + 1)
-            row.extend(rng.choice(other_names, n_wishes, replace=False))
-            row.extend([None] * (max_wishes - n_wishes))
+            n = rng.integers(1, max_wishes + 1)
+            row.extend(
+                (
+                    str(wish)
+                    for wish in rng.choice(other_names, n, replace=False)
+                )
+            )
+            row.extend([None] * (max_wishes - n))
 
             row.append(None)  # Partner
             rows.append(row)

@@ -1,3 +1,5 @@
+import hashlib
+
 import numpy as np
 from pandas import DataFrame
 
@@ -11,6 +13,14 @@ from source.constants import (
     WISH_COLUMNS,
     Wishes,
 )
+
+
+def deterministic_seed(value: str) -> int:
+    """Create a deterministic seed from a string, since Python's
+    built-in `hash` is not deterministic across sessions.
+    """
+    # sha256 is arbitrarily chosen. Could be any hash function
+    return int(hashlib.sha256(value.encode()).hexdigest(), 16) % (2**32)
 
 
 def _create_wishes(df: DataFrame) -> tuple[Wishes, Wishes]:
@@ -43,17 +53,25 @@ def _fill_wishes(df: DataFrame, wishes: Wishes) -> None:
     partners: dict[str, str] = dict(zip(df[NAME_COLUMN], df[PARTNER_COLUMN]))
 
     girls_names: list[str] = sorted(
-        df.loc[df[GENDER_COLUMN] == GENDERS[0], NAME_COLUMN].tolist()
+        df.loc[
+            (df[GENDER_COLUMN] == GENDERS[0])
+            & (df[SOCIAL_COLUMN] == SOCIAL_ANSWERS[0]),
+            NAME_COLUMN,
+        ].tolist()
     )
     boys_names: list[str] = sorted(
-        df.loc[df[GENDER_COLUMN] == GENDERS[1], NAME_COLUMN].tolist()
+        df.loc[
+            (df[GENDER_COLUMN] == GENDERS[1])
+            & (df[SOCIAL_COLUMN] == SOCIAL_ANSWERS[0]),
+            NAME_COLUMN,
+        ].tolist()
     )
 
     for person in wishes:
         girls_names_2 = girls_names.copy()
         boys_names_2 = boys_names.copy()
 
-        rng = np.random.default_rng(abs(hash(person)))
+        rng = np.random.default_rng(deterministic_seed(person))
         rng.shuffle(girls_names_2)
         rng.shuffle(boys_names_2)
 
@@ -73,9 +91,7 @@ def _fill_wishes(df: DataFrame, wishes: Wishes) -> None:
         )
 
 
-def _remove_asocialites(
-    df: DataFrame, wishes: Wishes, verbose: bool = True
-) -> None:
+def _remove_asocialites(df: DataFrame, wishes: Wishes) -> None:
     for _, row in df.iterrows():
         if row[SOCIAL_COLUMN] == SOCIAL_ANSWERS[0]:
             continue
@@ -83,8 +99,7 @@ def _remove_asocialites(
         name = row[NAME_COLUMN]
         wishes.pop(name, None)
 
-        if verbose:
-            print(f"Removed {name!r} from wishes.")
+        print(f"Removed {name!r} from wishes.")
 
         for person in wishes:
             if name in wishes[person]:
@@ -93,11 +108,9 @@ def _remove_asocialites(
 
 def get_wishes(df: DataFrame) -> tuple[Wishes, Wishes, Wishes]:
     academic_wishes, social_wishes = _create_wishes(df)
-
-    initial_wishes = social_wishes.copy()
-    _remove_asocialites(df, initial_wishes, verbose=False)
-
-    _fill_wishes(df, social_wishes)
     _remove_asocialites(df, social_wishes)
-
+    initial_wishes = {
+        name: wishes.copy() for name, wishes in social_wishes.items()
+    }
+    _fill_wishes(df, social_wishes)
     return academic_wishes, initial_wishes, social_wishes
