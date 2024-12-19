@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from numpy.random import Generator
 from pandas import DataFrame
 
 from source.constants import (
@@ -13,8 +14,7 @@ from source.constants import (
 )
 
 
-def _generate_wishes(seed: int) -> DataFrame:
-    rng = np.random.default_rng(seed)
+def _generate_rows(rng: Generator) -> list[list[str | None]]:
     rows: list[list[str | None]] = []
     all_names = (GIRLS_NAMES, BOYS_NAMES)
 
@@ -40,6 +40,10 @@ def _generate_wishes(seed: int) -> DataFrame:
             row.append(None)  # Partner
             rows.append(row)
 
+    return rows
+
+
+def _assign_sociality(rng: Generator, rows: list[list[str | None]]) -> None:
     girls_end = len(GIRLS_NAMES)
     random_girls_indices = rng.choice(girls_end, 5, replace=False)
     random_boys_indices = rng.choice(
@@ -57,11 +61,14 @@ def _generate_wishes(seed: int) -> DataFrame:
     for boy in random_boys[5:]:
         boy[social_idx] = SOCIAL_ANSWERS[1]
 
-    return DataFrame(rows, columns=GLOBAL_COLUMNS)
-
 
 def create_dummy_wishes(seed: int = 69_420) -> DataFrame:
-    df = _generate_wishes(seed)
+    rng = np.random.default_rng(seed)
+
+    rows = _generate_rows(rng)
+    _assign_sociality(rng, rows)
+    df = DataFrame(rows, columns=GLOBAL_COLUMNS)
+
     df.to_csv(WISHES_FILE, index=False)
     print(f"Wrote {len(df)} wishes to {WISHES_FILE!r}.")
     return df
@@ -72,7 +79,7 @@ def _fix_columns(df: DataFrame) -> DataFrame:
     second_columns = [f"{column}." for column in first_columns]
 
     for first_column, second_column in zip(first_columns, second_columns):
-        if second_column not in df.columns or first_column not in df.columns:
+        if second_column not in df.columns:
             continue
 
         df[first_column] = df[first_column].combine_first(df[second_column])
@@ -81,7 +88,7 @@ def _fix_columns(df: DataFrame) -> DataFrame:
     return df
 
 
-def read_wishes(fix: bool = False) -> DataFrame:
+def read_wishes(fix: bool = True) -> DataFrame:
     df = pd.read_csv(WISHES_FILE)
 
     if fix:

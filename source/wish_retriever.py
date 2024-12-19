@@ -1,4 +1,5 @@
 import hashlib
+from copy import deepcopy
 
 import numpy as np
 from pandas import DataFrame
@@ -109,8 +110,6 @@ def _remove_asocialites(df: DataFrame, wishes: Wishes) -> None:
 def get_wishes(df: DataFrame) -> tuple[Wishes, Wishes, Wishes]:
     academic_wishes, social_wishes = _create_wishes(df)
     _remove_asocialites(df, social_wishes)
-    initial_wishes = {
-        name: wishes.copy() for name, wishes in social_wishes.items()
-    }
+    initial_wishes = deepcopy(social_wishes)
     _fill_wishes(df, social_wishes)
     return academic_wishes, initial_wishes, social_wishes
