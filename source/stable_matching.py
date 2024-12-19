@@ -4,17 +4,16 @@ from collections.abc import Container, Iterable, Mapping
 from matching.games import StableRoommates
 
 from source.constants import MATCHING_FILE
-from source.helpers.bidict import Bidict
 
 
-def stable_roommates(wishes: Mapping[str, Iterable[str]]) -> Bidict:
+def stable_roommates(wishes: Mapping[str, Iterable[str]]) -> dict[str, str]:
     game = StableRoommates.create_from_dictionary(wishes)
     matching = game.solve()
-    return Bidict({str(k): str(v) for k, v in matching.items()})
+    return {str(k): str(v) for k, v in matching.items()}
 
 
 def score_matching(
-    initial_wishes: Mapping[str, Container[str]], matching: Bidict
+    initial_wishes: Mapping[str, Container[str]], matching: Mapping[str, str]
 ) -> int:
     return sum(
         matching[person] in wish_list
@@ -22,13 +21,16 @@ def score_matching(
     )
 
 
-def export_matching(matching: Bidict) -> None:
+def export_matching(matching: Mapping[str, str]) -> None:
+    matching = {k: v for k, v in matching.items() if k < v}
+
     with open(MATCHING_FILE, "w", encoding="utf-8") as file:
-        json.dump(matching.d, file, ensure_ascii=False, indent=4)
+        json.dump(matching, file, ensure_ascii=False, indent=4)
 
     print(f"Wrote matching to {MATCHING_FILE!r}.")
 
 
-def import_matching() -> Bidict:
+def import_matching() -> dict[str, str]:
     with open(MATCHING_FILE, encoding="utf-8") as file:
-        return Bidict(json.load(file))
+        matching: dict[str, str] = json.load(file)
+        return matching | {v: k for k, v in matching.items()}
