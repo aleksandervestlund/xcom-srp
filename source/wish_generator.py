@@ -18,7 +18,7 @@ def _generate_wishes(seed: int) -> DataFrame:
     rows: list[list[str | None]] = []
     all_names = (GIRLS_NAMES, BOYS_NAMES)
 
-    for gender, names in zip(GENDERS, all_names, strict=True):
+    for gender, names in zip(GENDERS, all_names):
         for name in names:
             other_names = names.copy()
             other_names.remove(name)

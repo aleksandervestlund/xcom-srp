@@ -1,3 +1,6 @@
+from typing import TypeAlias
+
+
 WISHES_FILE = "wishes.csv"
 MATCHING_FILE = "matching.json"
 
@@ -17,3 +20,6 @@ GLOBAL_COLUMNS = [
 
 SOCIAL_ANSWERS = ("Ja", "Nei")
 GENDERS = ("Jente", "Gutt")
+
+Wishes: TypeAlias = dict[str, list[str]]
+Matching: TypeAlias = dict[str, str]

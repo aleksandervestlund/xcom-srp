@@ -1,17 +1,28 @@
+from typing import TypeAlias
+
 import networkx as nx
 from matplotlib import pyplot as plt
 from networkx import Graph
 from pandas import DataFrame
 
-from source.constants import GENDER_COLUMN, GENDERS, NAME_COLUMN, WISH_COLUMNS
+from source.constants import (
+    GENDER_COLUMN,
+    GENDERS,
+    NAME_COLUMN,
+    WISH_COLUMNS,
+    Wishes,
+)
+
+
+GraphPair: TypeAlias = tuple[Graph, Graph]
 
 
 def add_wish_edge(
     df: DataFrame,
-    wishes: dict[str, list[str]],
+    wishes: Wishes,
     wish_index: int,
-    graphs: tuple[Graph, Graph] | None = None,
-) -> tuple[Graph, Graph]:
+    graphs: GraphPair | None = None,
+) -> GraphPair:
     if wish_index < 0 or wish_index >= len(WISH_COLUMNS):
         raise ValueError("Invalid wish index.")
 
@@ -28,7 +39,7 @@ def add_wish_edge(
     return graphs
 
 
-def plot_graphs(graphs: tuple[Graph, Graph]) -> None:
+def plot_graphs(graphs: GraphPair) -> None:
     for graph, gender in zip(graphs, GENDERS):
         for i, component in enumerate(nx.connected_components(graph), 1):
             subgraph = graph.subgraph(component)

@@ -1,5 +1,3 @@
-from collections.abc import Mapping, MutableMapping
-
 import numpy as np
 from pandas import DataFrame
 
@@ -11,14 +9,13 @@ from source.constants import (
     SOCIAL_ANSWERS,
     SOCIAL_COLUMN,
     WISH_COLUMNS,
+    Wishes,
 )
 
 
-def _create_wishes(
-    df: DataFrame,
-) -> tuple[dict[str, list[str]], dict[str, list[str]]]:
-    academic_wishes: dict[str, list[str]] = {}
-    social_wishes: dict[str, list[str]] = {}
+def _create_wishes(df: DataFrame) -> tuple[Wishes, Wishes]:
+    academic_wishes: Wishes = {}
+    social_wishes: Wishes = {}
 
     for _, row in df.iterrows():
         name = row[NAME_COLUMN]
@@ -41,7 +38,7 @@ def _create_wishes(
     return academic_wishes, social_wishes
 
 
-def _fill_wishes(df: DataFrame, wishes: Mapping[str, list[str]]) -> None:
+def _fill_wishes(df: DataFrame, wishes: Wishes) -> None:
     genders: dict[str, str] = dict(zip(df[NAME_COLUMN], df[GENDER_COLUMN]))
     partners: dict[str, str] = dict(zip(df[NAME_COLUMN], df[PARTNER_COLUMN]))
 
@@ -77,7 +74,7 @@ def _fill_wishes(df: DataFrame, wishes: Mapping[str, list[str]]) -> None:
 
 
 def _remove_asocialites(
-    df: DataFrame, wishes: MutableMapping[str, list[str]], verbose: bool = True
+    df: DataFrame, wishes: Wishes, verbose: bool = True
 ) -> None:
     for _, row in df.iterrows():
         if row[SOCIAL_COLUMN] == SOCIAL_ANSWERS[0]:
@@ -94,9 +91,7 @@ def _remove_asocialites(
                 wishes[person].remove(name)
 
 
-def get_wishes(
-    df: DataFrame,
-) -> tuple[dict[str, list[str]], dict[str, list[str]], dict[str, list[str]]]:
+def get_wishes(df: DataFrame) -> tuple[Wishes, Wishes, Wishes]:
     academic_wishes, social_wishes = _create_wishes(df)
 
     initial_wishes = social_wishes.copy()
