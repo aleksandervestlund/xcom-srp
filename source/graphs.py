@@ -1,5 +1,3 @@
-from collections.abc import Iterable
-
 import networkx as nx
 from matplotlib import pyplot as plt
 from networkx import Graph
@@ -8,32 +6,30 @@ from pandas import DataFrame
 from source.constants import GENDER_COLUMN, GENDERS, NAME_COLUMN, WISH_COLUMNS
 
 
-def create_graphs(
-    df: DataFrame, wish_columns: Iterable[str] | None = None
+def add_wish_edge(
+    df: DataFrame,
+    wishes: dict[str, list[str]],
+    wish_index: int,
+    graphs: tuple[Graph, Graph] | None = None,
 ) -> tuple[Graph, Graph]:
-    graph_female: Graph = Graph()
-    graph_male: Graph = Graph()
-    graphs = (graph_female, graph_male)
+    if wish_index < 0 or wish_index >= len(WISH_COLUMNS):
+        raise ValueError("Invalid wish index.")
 
-    if wish_columns is None:
-        wish_columns = WISH_COLUMNS
+    genders: dict[str, str] = dict(zip(df[NAME_COLUMN], df[GENDER_COLUMN]))
+    graphs = graphs if graphs is not None else (Graph(), Graph())
 
-    for _, row in df.iterrows():
-        name = row[NAME_COLUMN]
-        gender = row[GENDER_COLUMN]
-        graph = graphs[GENDERS.index(gender)]
+    for name, friends in wishes.items():
+        if len(friends) <= wish_index:
+            continue
 
-        for wish in wish_columns:
-            friend = row[wish]
-
-            if isinstance(friend, str):
-                graph.add_edge(name, friend)
+        graph = graphs[GENDERS.index(genders[name])]
+        graph.add_edge(name, friends[wish_index])
 
     return graphs
 
 
-def plot_graphs(graphs: Iterable[Graph]) -> None:
-    for graph, gender in zip(graphs, GENDERS, strict=True):
+def plot_graphs(graphs: tuple[Graph, Graph]) -> None:
+    for graph, gender in zip(graphs, GENDERS):
         for i, component in enumerate(nx.connected_components(graph), 1):
             subgraph = graph.subgraph(component)
 

@@ -1,4 +1,3 @@
-from collections import defaultdict
 from collections.abc import Mapping, MutableMapping
 
 import numpy as np
@@ -15,13 +14,14 @@ from source.constants import (
 )
 
 
-def _create_wishes(df: DataFrame) -> dict[str, list[str]]:
-    wishes: defaultdict[str, list[str]] = defaultdict(list)
+def _create_wishes(
+    df: DataFrame,
+) -> tuple[dict[str, list[str]], dict[str, list[str]]]:
+    academic_wishes: dict[str, list[str]] = {}
+    social_wishes: dict[str, list[str]] = {}
 
     for _, row in df.iterrows():
         name = row[NAME_COLUMN]
-        partner = row[PARTNER_COLUMN]
-
         friends = [
             row[wish] for wish in WISH_COLUMNS if isinstance(row[wish], str)
         ]
@@ -31,22 +31,24 @@ def _create_wishes(df: DataFrame) -> dict[str, list[str]]:
                 f"{name} has duplicate entries in their wish list."
             )
 
+        academic_wishes[name] = friends
+        social_wishes[name] = friends.copy()
+        partner = row[PARTNER_COLUMN]
+
         if isinstance(partner, str):
-            wishes[name].append(partner)
+            social_wishes[name].insert(0, partner)
 
-        wishes[name].extend(friends)
-
-    return dict(wishes)
+    return academic_wishes, social_wishes
 
 
 def _fill_wishes(df: DataFrame, wishes: Mapping[str, list[str]]) -> None:
-    genders = dict(zip(df[NAME_COLUMN], df[GENDER_COLUMN]))
-    partners = dict(zip(df[NAME_COLUMN], df[PARTNER_COLUMN]))
+    genders: dict[str, str] = dict(zip(df[NAME_COLUMN], df[GENDER_COLUMN]))
+    partners: dict[str, str] = dict(zip(df[NAME_COLUMN], df[PARTNER_COLUMN]))
 
-    girls_names = sorted(
+    girls_names: list[str] = sorted(
         df.loc[df[GENDER_COLUMN] == GENDERS[0], NAME_COLUMN].tolist()
     )
-    boys_names = sorted(
+    boys_names: list[str] = sorted(
         df.loc[df[GENDER_COLUMN] == GENDERS[1], NAME_COLUMN].tolist()
     )
 
@@ -82,7 +84,7 @@ def _remove_asocialites(
             continue
 
         name = row[NAME_COLUMN]
-        wishes.pop(name)
+        wishes.pop(name, None)
 
         if verbose:
             print(f"Removed {name!r} from wishes.")
@@ -92,12 +94,15 @@ def _remove_asocialites(
                 wishes[person].remove(name)
 
 
-def get_social_wishes(
+def get_wishes(
     df: DataFrame,
-) -> tuple[dict[str, list[str]], dict[str, list[str]]]:
-    wishes = _create_wishes(df)
-    initial_wishes = wishes.copy()
-    _fill_wishes(df, wishes)
-    _remove_asocialites(df, wishes)
+) -> tuple[dict[str, list[str]], dict[str, list[str]], dict[str, list[str]]]:
+    academic_wishes, social_wishes = _create_wishes(df)
+
+    initial_wishes = social_wishes.copy()
     _remove_asocialites(df, initial_wishes, verbose=False)
-    return initial_wishes, wishes
+
+    _fill_wishes(df, social_wishes)
+    _remove_asocialites(df, social_wishes)
+
+    return academic_wishes, initial_wishes, social_wishes
