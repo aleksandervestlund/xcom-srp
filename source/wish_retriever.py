@@ -21,7 +21,7 @@ def deterministic_seed(value: str) -> int:
     built-in `hash` is not deterministic across sessions.
     """
     # sha256 is arbitrarily chosen. Could be any hash function
-    return int(hashlib.sha256(value.encode()).hexdigest(), 16) % (2**32)
+    return int(hashlib.sha256(value.encode()).hexdigest(), 16) % 2**32
 
 
 def _create_wishes(df: DataFrame) -> tuple[Wishes, Wishes]:

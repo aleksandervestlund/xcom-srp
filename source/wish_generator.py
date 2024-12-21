@@ -28,7 +28,7 @@ def _generate_rows(rng: Generator) -> list[list[str | None]]:
             row.append(gender)
 
             max_wishes = len(WISH_COLUMNS)
-            n = rng.integers(1, max_wishes + 1)
+            n = rng.integers(2, max_wishes + 1)
             row.extend(
                 (
                     str(wish)

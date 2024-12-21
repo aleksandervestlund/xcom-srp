@@ -1,8 +1,12 @@
 import json
+from typing import TypeAlias
 
 from matching.games import StableRoommates
 
-from source.constants import MATCHING_FILE, Matching, Wishes
+from source.constants import MATCHING_FILE, Wishes
+
+
+Matching: TypeAlias = dict[str, str]
 
 
 def stable_roommates(wishes: Wishes) -> Matching:
