@@ -2,7 +2,6 @@ import hashlib
 from collections.abc import Mapping
 from copy import deepcopy
 
-import networkx as nx
 import numpy as np
 from networkx import Graph, single_source_shortest_path_length
 from pandas import DataFrame
@@ -15,7 +14,6 @@ from source.constants import (
     SOCIAL_ANSWERS,
     SOCIAL_COLUMN,
     WISH_COLUMNS,
-    GraphPair,
     Wishes,
 )
 from source.graphs import add_wish_edge
@@ -77,19 +75,17 @@ def _shuffle_names(
 
 
 def _compose_graphs(
-    df: DataFrame, academic_wishes: Wishes, social_wishes: Wishes
-) -> tuple[GraphPair, Graph]:
-    academic_graphs: GraphPair = (Graph(), Graph())
-    social_graphs: GraphPair = (Graph(), Graph())
+    academic_wishes: Wishes, social_wishes: Wishes
+) -> tuple[Graph, Graph]:
+    academic_graph: Graph = Graph()
+    social_graph: Graph = Graph()
 
-    for i in range(len(WISH_COLUMNS)):
-        academic_graphs = add_wish_edge(
-            df, academic_wishes, i, academic_graphs
-        )
-        social_graphs = add_wish_edge(df, social_wishes, i, social_graphs)
+    # Plus one to include the partner
+    for i in range(len(WISH_COLUMNS) + 1):
+        add_wish_edge(academic_wishes, i, academic_graph)
+        add_wish_edge(social_wishes, i, social_graph)
 
-    social_graph = nx.compose(*social_graphs)  # type: ignore
-    return academic_graphs, social_graph
+    return academic_graph, social_graph
 
 
 def _fill_wishes(
@@ -113,15 +109,14 @@ def _fill_wishes(
         and socialities[name] == SOCIAL_ANSWERS[0]
     )
 
-    academic_graphs, social_graph = _compose_graphs(
-        df, academic_wishes, social_wishes
+    academic_graph, social_graph = _compose_graphs(
+        academic_wishes, social_wishes
     )
 
     for person in social_wishes:
         gender = genders[person]
 
         # Fill in closest same gender friends
-        academic_graph = academic_graphs[GENDERS.index(gender)]
         path_lengths = single_source_shortest_path_length(
             academic_graph, person
         )
@@ -168,7 +163,9 @@ def _fill_wishes(
         )
 
 
-def _remove_asocialites(df: DataFrame, wishes: Wishes) -> None:
+def _remove_asocialites(
+    df: DataFrame, wishes: Wishes, verbose: bool = False
+) -> None:
     for _, row in df.iterrows():
         if row[SOCIAL_COLUMN] == SOCIAL_ANSWERS[0]:
             continue
@@ -176,7 +173,8 @@ def _remove_asocialites(df: DataFrame, wishes: Wishes) -> None:
         name = row[NAME_COLUMN]
         wishes.pop(name, None)
 
-        print(f"Removed {name!r} from wishes.")
+        if verbose:
+            print(f"Removed {name!r} from wishes.")
 
         for person in wishes:
             if name in wishes[person]:
@@ -185,7 +183,7 @@ def _remove_asocialites(df: DataFrame, wishes: Wishes) -> None:
 
 def get_wishes(df: DataFrame) -> tuple[Wishes, Wishes, Wishes]:
     academic_wishes, social_wishes = _create_wishes(df)
-    _remove_asocialites(df, social_wishes)
+    _remove_asocialites(df, social_wishes, verbose=True)
     initial_wishes = deepcopy(social_wishes)
     _fill_wishes(df, academic_wishes, social_wishes)
     return academic_wishes, initial_wishes, social_wishes
