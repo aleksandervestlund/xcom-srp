@@ -1,8 +1,6 @@
-from typing import TypeAlias
-
 import networkx as nx
 from matplotlib import pyplot as plt
-from networkx import Graph
+from networkx import DiGraph, Graph
 from pandas import DataFrame
 
 from source.constants import (
@@ -10,11 +8,9 @@ from source.constants import (
     GENDERS,
     NAME_COLUMN,
     WISH_COLUMNS,
+    GraphPair,
     Wishes,
 )
-
-
-GraphPair: TypeAlias = tuple[Graph, Graph]
 
 
 def add_wish_edge(
@@ -41,7 +37,13 @@ def add_wish_edge(
 
 def plot_graphs(graphs: GraphPair) -> None:
     for graph, gender in zip(graphs, GENDERS):
-        for i, component in enumerate(nx.connected_components(graph), 1):
+        components = (
+            nx.weakly_connected_components(graph)
+            if isinstance(graph, DiGraph)
+            else nx.connected_components(graph)
+        )
+
+        for i, component in enumerate(components, 1):
             subgraph = graph.subgraph(component)
 
             plt.figure(figsize=(12, 6))

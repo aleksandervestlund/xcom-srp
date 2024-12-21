@@ -1,7 +1,10 @@
 import hashlib
+from collections.abc import Mapping
 from copy import deepcopy
 
+import networkx as nx
 import numpy as np
+from networkx import Graph, single_source_shortest_path_length
 from pandas import DataFrame
 
 from source.constants import (
@@ -12,8 +15,10 @@ from source.constants import (
     SOCIAL_ANSWERS,
     SOCIAL_COLUMN,
     WISH_COLUMNS,
+    GraphPair,
     Wishes,
 )
+from source.graphs import add_wish_edge
 
 
 def deterministic_seed(value: str) -> int:
@@ -49,46 +54,117 @@ def _create_wishes(df: DataFrame) -> tuple[Wishes, Wishes]:
     return academic_wishes, social_wishes
 
 
-def _fill_wishes(df: DataFrame, wishes: Wishes) -> None:
+def _shuffle_names(
+    genders: Mapping[str, str],
+    girls_names: list[str],
+    boys_names: list[str],
+    person: str,
+) -> tuple[list[str], list[str]]:
+    girls_names_2 = girls_names.copy()
+    boys_names_2 = boys_names.copy()
+
+    rng = np.random.default_rng(deterministic_seed(person))
+    rng.shuffle(girls_names_2)
+    rng.shuffle(boys_names_2)
+
+    primary_names, secondary_names = (
+        (girls_names_2, boys_names_2)
+        if genders[person] == GENDERS[0]
+        else (boys_names_2, girls_names_2)
+    )
+
+    return primary_names, secondary_names
+
+
+def _compose_graphs(
+    df: DataFrame, academic_wishes: Wishes, social_wishes: Wishes
+) -> tuple[GraphPair, Graph]:
+    academic_graphs: GraphPair = (Graph(), Graph())
+    social_graphs: GraphPair = (Graph(), Graph())
+
+    for i in range(len(WISH_COLUMNS)):
+        academic_graphs = add_wish_edge(
+            df, academic_wishes, i, academic_graphs
+        )
+        social_graphs = add_wish_edge(df, social_wishes, i, social_graphs)
+
+    social_graph = nx.compose(*social_graphs)  # type: ignore
+    return academic_graphs, social_graph
+
+
+def _fill_wishes(
+    df: DataFrame, academic_wishes: Wishes, social_wishes: Wishes
+) -> None:
+    academic_wishes = deepcopy(academic_wishes)
+    _remove_asocialites(df, academic_wishes)
+
     genders: dict[str, str] = dict(zip(df[NAME_COLUMN], df[GENDER_COLUMN]))
-    partners: dict[str, str] = dict(zip(df[NAME_COLUMN], df[PARTNER_COLUMN]))
-
-    girls_names: list[str] = sorted(
-        df.loc[
-            (df[GENDER_COLUMN] == GENDERS[0])
-            & (df[SOCIAL_COLUMN] == SOCIAL_ANSWERS[0]),
-            NAME_COLUMN,
-        ].tolist()
+    socialities: dict[str, str] = dict(zip(df[NAME_COLUMN], df[SOCIAL_COLUMN]))
+    girls_names = sorted(
+        name
+        for name in genders
+        if genders[name] == GENDERS[0]
+        and socialities[name] == SOCIAL_ANSWERS[0]
     )
-    boys_names: list[str] = sorted(
-        df.loc[
-            (df[GENDER_COLUMN] == GENDERS[1])
-            & (df[SOCIAL_COLUMN] == SOCIAL_ANSWERS[0]),
-            NAME_COLUMN,
-        ].tolist()
+    boys_names = sorted(
+        name
+        for name in genders
+        if genders[name] == GENDERS[1]
+        and socialities[name] == SOCIAL_ANSWERS[0]
     )
 
-    for person in wishes:
-        girls_names_2 = girls_names.copy()
-        boys_names_2 = boys_names.copy()
+    academic_graphs, social_graph = _compose_graphs(
+        df, academic_wishes, social_wishes
+    )
 
-        rng = np.random.default_rng(deterministic_seed(person))
-        rng.shuffle(girls_names_2)
-        rng.shuffle(boys_names_2)
+    for person in social_wishes:
+        gender = genders[person]
 
-        primary_names, secondary_names = (
-            (girls_names_2, boys_names_2)
-            if genders[person] == GENDERS[0]
-            else (boys_names_2, girls_names_2)
+        # Fill in closest same gender friends
+        academic_graph = academic_graphs[GENDERS.index(gender)]
+        path_lengths = single_source_shortest_path_length(
+            academic_graph, person
+        )
+        sorted_names = sorted(path_lengths, key=lambda x: (path_lengths[x], x))
+        social_wishes[person].extend(
+            name
+            for name in sorted_names
+            if name not in social_wishes[person] and name != person
         )
 
-        wishes[person].extend(
+        # Fill in close same gender friends
+        path_lengths = single_source_shortest_path_length(social_graph, person)
+        sorted_names = sorted(path_lengths, key=lambda x: (path_lengths[x], x))
+        social_wishes[person].extend(
+            name
+            for name in sorted_names
+            if name not in social_wishes[person]
+            and gender == genders[name]
+            and name != person
+        )
+
+        # Fill in remaining same gender friends
+        primary_names, secondary_names = _shuffle_names(
+            genders, girls_names, boys_names, person
+        )
+        social_wishes[person].extend(
             name
             for name in primary_names
-            if name not in wishes[person] and name != person
+            if name not in social_wishes[person] and name != person
         )
-        wishes[person].extend(
-            name for name in secondary_names if name != partners[person]
+
+        # Fill in close opposite gender friends
+        social_wishes[person].extend(
+            name
+            for name in sorted_names
+            if name not in social_wishes[person] and name != person
+        )
+
+        # Fill in remaining opposite gender friends
+        social_wishes[person].extend(
+            name
+            for name in secondary_names
+            if name not in social_wishes[person]
         )
 
 
@@ -111,5 +187,5 @@ def get_wishes(df: DataFrame) -> tuple[Wishes, Wishes, Wishes]:
     academic_wishes, social_wishes = _create_wishes(df)
     _remove_asocialites(df, social_wishes)
     initial_wishes = deepcopy(social_wishes)
-    _fill_wishes(df, social_wishes)
+    _fill_wishes(df, academic_wishes, social_wishes)
     return academic_wishes, initial_wishes, social_wishes

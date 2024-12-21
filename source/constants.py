@@ -1,7 +1,10 @@
 from typing import TypeAlias
 
+from networkx import Graph
+
 
 Wishes: TypeAlias = dict[str, list[str]]
+GraphPair: TypeAlias = tuple[Graph, Graph]
 
 WISHES_FILE = "wishes.csv"
 MATCHING_FILE = "matching.json"
