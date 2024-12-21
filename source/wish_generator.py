@@ -30,10 +30,7 @@ def _generate_rows(rng: Generator) -> list[list[str | None]]:
             max_wishes = len(WISH_COLUMNS)
             n = rng.integers(2, max_wishes + 1)
             row.extend(
-                (
-                    str(wish)
-                    for wish in rng.choice(other_names, n, replace=False)
-                )
+                str(wish) for wish in rng.choice(other_names, n, replace=False)
             )
             row.extend([None] * (max_wishes - n))
 
@@ -44,10 +41,13 @@ def _generate_rows(rng: Generator) -> list[list[str | None]]:
 
 
 def _assign_sociality(rng: Generator, rows: list[list[str | None]]) -> None:
+    pairs = 5
+    asocials = 5
+
     girls_end = len(GIRLS_NAMES)
-    random_girls_indices = rng.choice(girls_end, 5, replace=False)
+    random_girls_indices = rng.choice(girls_end, pairs, replace=False)
     random_boys_indices = rng.choice(
-        range(girls_end, len(rows)), 10, replace=False
+        range(girls_end, len(rows)), pairs + asocials, replace=False
     )
     random_girls = [rows[i] for i in random_girls_indices]
     random_boys = [rows[i] for i in random_boys_indices]
@@ -58,7 +58,7 @@ def _assign_sociality(rng: Generator, rows: list[list[str | None]]) -> None:
     for boy, girl in zip(random_boys, random_girls, strict=False):
         boy[partner_idx] = girl[0]
         girl[partner_idx] = boy[0]
-    for boy in random_boys[5:]:
+    for boy in random_boys[pairs:]:
         boy[social_idx] = SOCIAL_ANSWERS[1]
 
 

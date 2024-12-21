@@ -12,7 +12,9 @@ Matching: TypeAlias = dict[str, str]
 def stable_roommates(wishes: Wishes) -> Matching:
     game = StableRoommates.create_from_dictionary(wishes)
     matching = game.solve()
-    return {str(k): str(v) for k, v in matching.items()}
+    return {
+        k.name: v.name if v is not None else None for k, v in matching.items()
+    }
 
 
 def score_matching(initial_wishes: Wishes, matching: Matching) -> int:
