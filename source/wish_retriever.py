@@ -79,12 +79,13 @@ def _compose_graphs(
 ) -> tuple[Graph, Graph]:
     academic_graph: Graph = Graph()
     social_graph: Graph = Graph()
+    number_of_wishes = len(WISH_COLUMNS)
 
-    # Plus one to include the partner
-    for i in range(len(WISH_COLUMNS) + 1):
+    for i in range(number_of_wishes):
         add_wish_edge(academic_wishes, i, academic_graph)
         add_wish_edge(social_wishes, i, social_graph)
 
+    add_wish_edge(social_wishes, number_of_wishes + 1, social_graph)
     return academic_graph, social_graph
 
 

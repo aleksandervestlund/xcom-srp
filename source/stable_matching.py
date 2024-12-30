@@ -12,9 +12,11 @@ Matching: TypeAlias = dict[str, str]
 def stable_roommates(wishes: Wishes) -> Matching:
     game = StableRoommates.create_from_dictionary(wishes)
     matching = game.solve()
-    return {
-        k.name: v.name if v is not None else None for k, v in matching.items()
-    }
+
+    if None in matching.values():
+        raise ValueError("Not all participants could be matched.")
+
+    return {k.name: v.name for k, v in matching.items()}
 
 
 def score_matching(initial_wishes: Wishes, matching: Matching) -> int:
@@ -36,4 +38,5 @@ def export_matching(matching: Matching) -> None:
 def import_matching() -> Matching:
     with open(MATCHING_FILE, encoding="utf-8") as file:
         matching: Matching = json.load(file)
-        return matching | {v: k for k, v in matching.items()}
+
+    return matching | {v: k for k, v in matching.items()}

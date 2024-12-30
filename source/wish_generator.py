@@ -24,11 +24,11 @@ def _generate_rows(rng: Generator) -> list[list[str | None]]:
             other_names.remove(name)
 
             row: list[str | None] = [name]
-            row.append(SOCIAL_ANSWERS[0])  # Social
+            row.append(SOCIAL_ANSWERS[0])
             row.append(gender)
 
             max_wishes = len(WISH_COLUMNS)
-            n = rng.integers(2, max_wishes + 1)
+            n = rng.integers(1, max_wishes + 1)
             row.extend(
                 str(wish) for wish in rng.choice(other_names, n, replace=False)
             )
