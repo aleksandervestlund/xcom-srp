@@ -30,7 +30,7 @@ def export_matching(matching: Matching) -> None:
     matching = {k: v for k, v in matching.items() if k < v}
 
     with open(MATCHING_FILE, "w", encoding="utf-8") as file:
-        json.dump(matching, file, ensure_ascii=False, indent=4)
+        json.dump(matching, file, ensure_ascii=False, indent=4, sort_keys=True)
 
     print(f"Wrote matching to {MATCHING_FILE!r}.")
 
