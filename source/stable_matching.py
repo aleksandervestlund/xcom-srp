@@ -20,10 +20,18 @@ def stable_roommates(wishes: Wishes) -> Matching:
 
 
 def score_matching(initial_wishes: Wishes, matching: Matching) -> int:
-    return sum(
-        matching[person] in wish_list
-        for person, wish_list in initial_wishes.items()
-    )
+    count = 0
+
+    for person, wish_list in initial_wishes.items():
+        if matching[person] in wish_list:
+            count += 1
+        else:
+            print(
+                f"{person} matched with {matching[person]}, but wanted: "
+                f"{', '.join(wish_list)}."
+            )
+
+    return count
 
 
 def export_matching(matching: Matching) -> None:

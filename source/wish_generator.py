@@ -9,6 +9,7 @@ from source.constants import (
     PARTNER_COLUMN,
     SOCIAL_ANSWERS,
     SOCIAL_COLUMN,
+    UNUSED_COLUMNS,
     WISH_COLUMNS,
     WISHES_FILE,
 )
@@ -84,7 +85,8 @@ def _fix_columns(df: DataFrame) -> DataFrame:
 
         df[first_column] = df[first_column].combine_first(df[second_column])
 
-    df.drop(columns=second_columns, inplace=True)
+    df.drop(columns=second_columns, errors="ignore", inplace=True)
+    df.drop(columns=UNUSED_COLUMNS, errors="ignore", inplace=True)
     return df
 
 

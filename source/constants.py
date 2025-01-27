@@ -25,6 +25,7 @@ GLOBAL_COLUMNS = [
     *WISH_COLUMNS,
     PARTNER_COLUMN,
 ]
+UNUSED_COLUMNS = ["Tidsmerke", "E-postadresse", "Kommentarer"]
 
 SOCIAL_ANSWERS = ("Ja", "Nei")
 GENDERS = ("Jente", "Gutt")

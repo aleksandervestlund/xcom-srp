@@ -1,5 +1,5 @@
 import hashlib
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping, MutableMapping
 from copy import deepcopy
 
 import numpy as np
@@ -24,7 +24,7 @@ def deterministic_seed(value: str) -> int:
     built-in `hash` is not deterministic across sessions.
     """
     # sha256 is arbitrarily chosen. Could be any hash function
-    return int(hashlib.sha256(value.encode()).hexdigest(), 16) % 2**32
+    return int(hashlib.sha3_512(value.encode()).hexdigest(), 16) % 2**32
 
 
 def _create_wishes(df: DataFrame) -> tuple[Wishes, Wishes]:
@@ -188,3 +188,21 @@ def get_wishes(df: DataFrame) -> tuple[Wishes, Wishes, Wishes]:
     initial_wishes = deepcopy(social_wishes)
     _fill_wishes(df, academic_wishes, social_wishes)
     return academic_wishes, initial_wishes, social_wishes
+
+
+def remove_well_matched(
+    social_wishes: MutableMapping[str, list[str]],
+    initial_wishes: MutableMapping[str, list[str]],
+    well_matched: Iterable[str],
+) -> None:
+
+    for person in well_matched:
+        social_wishes.pop(person, None)
+        initial_wishes.pop(person, None)
+
+        for friend_list in social_wishes.values():
+            friend_list.remove(person)
+
+        for friend_list in initial_wishes.values():
+            if person in friend_list:
+                friend_list.remove(person)

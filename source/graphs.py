@@ -10,6 +10,9 @@ def add_wish_edge(wishes: Wishes, wish_index: int, graph: Graph) -> None:
         raise ValueError("Invalid wish index.")
 
     for name, friends in wishes.items():
+        if name not in graph:
+            graph.add_node(name)
+
         if len(friends) <= wish_index:
             continue
 
