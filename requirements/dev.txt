@@ -2,5 +2,5 @@
 
 black==25.1.0
 isort==6.0.0
-mypy==1.14.1
+mypy==1.15.0
 types-networkx==3.4.2.20241227
