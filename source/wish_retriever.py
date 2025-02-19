@@ -195,7 +195,6 @@ def remove_well_matched(
     initial_wishes: MutableMapping[str, list[str]],
     well_matched: Iterable[str],
 ) -> None:
-
     for person in well_matched:
         social_wishes.pop(person, None)
         initial_wishes.pop(person, None)

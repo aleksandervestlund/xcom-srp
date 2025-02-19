@@ -1,6 +1,9 @@
 **/__pycache__/*
 **/.mypy_cache/*
+**/.DS_Store
+
 **/wishes.csv
 **/matching.json
 main.py
-*.xlsx
+
+**/*.xlsx

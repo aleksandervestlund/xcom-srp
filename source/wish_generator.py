@@ -42,7 +42,7 @@ def _generate_rows(rng: Generator) -> list[list[str | None]]:
 
 
 def _assign_sociality(rng: Generator, rows: list[list[str | None]]) -> None:
-    pairs = 5
+    pairs = 3
     asocials = 5
 
     girls_end = len(GIRLS_NAMES)
@@ -59,6 +59,7 @@ def _assign_sociality(rng: Generator, rows: list[list[str | None]]) -> None:
     for boy, girl in zip(random_boys, random_girls, strict=False):
         boy[partner_idx] = girl[0]
         girl[partner_idx] = boy[0]
+
     for boy in random_boys[pairs:]:
         boy[social_idx] = SOCIAL_ANSWERS[1]
 
