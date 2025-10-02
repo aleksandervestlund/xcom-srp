@@ -1,6 +1,6 @@
 -r base.txt
 
 black==25.9.0
-isort==6.0.1
+isort==6.1.0
 mypy==1.18.2
 types-networkx==3.5.0.20250918
